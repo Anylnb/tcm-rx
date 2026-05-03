@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中醫處方工具 TCM Prescription Tool</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; background: #f5f0eb; color: #333; padding: 16px; }
+h1 { text-align: center; color: #5a3e2b; margin-bottom: 2px; font-size: 1.5em; }
+.subtitle { text-align: center; color: #8b7355; margin-bottom: 14px; font-size: 0.85em; }
+.main { display: flex; gap: 16px; max-width: 1200px; margin: 0 auto; }
+.left { flex: 1; min-width: 0; }
+.right { width: 360px; flex-shrink: 0; }
+.card { background: #fff; border-radius: 10px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+.card h2 { color: #5a3e2b; font-size: 1em; margin-bottom: 10px; border-bottom: 2px solid #d4c5a9; padding-bottom: 5px; }
+.search-box { position: relative; }
+.search-box input { width: 100%; padding: 9px 12px; border: 2px solid #d4c5a9; border-radius: 8px; font-size: 14px; outline: none; }
+.search-box input:focus { border-color: #8b7355; }
+.dropdown { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #d4c5a9; border-radius: 0 0 8px 8px; max-height: 320px; overflow-y: auto; z-index: 100; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+.dropdown .gl { padding: 5px 12px; background: #f0e8d8; color: #8b7355; font-size: 0.75em; font-weight: bold; position: sticky; top: 0; }
+.dropdown .item { padding: 7px 12px; cursor: pointer; display: flex; justify-content: space-between; font-size: 13px; }
+.dropdown .item:hover { background: #faf5ed; }
+.dropdown .item .cn { color: #8b7355; margin-left: 6px; }
+.dropdown .item .en { color: #aaa; font-size: 0.85em; }
+.tag { font-size: 0.65em; padding: 1px 5px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
+.tag-h { background: #e8f5e9; color: #2e7d32; }
+.tag-f { background: #e3f2fd; color: #1565c0; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 6px 4px; color: #8b7355; font-size: 0.8em; border-bottom: 2px solid #d4c5a9; }
+td { padding: 5px 4px; border-bottom: 1px solid #eee; }
+td input { width: 100%; padding: 3px 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; text-align: center; }
+td input:focus { border-color: #8b7355; outline: none; }
+.btn { padding: 5px 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; }
+.btn-rm { background: #ffebee; color: #c62828; }
+.btn-rm:hover { background: #ffcdd2; }
+.btn-p { background: #5a3e2b; color: #fff; padding: 8px 18px; font-size: 14px; }
+.btn-p:hover { background: #7a5e4b; }
+.btn-s { background: #d4c5a9; color: #5a3e2b; }
+.btn-s:hover { background: #c4b599; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+.row label { font-size: 13px; color: #666; white-space: nowrap; }
+.row input, .row select { padding: 5px 8px; border: 1px solid #d4c5a9; border-radius: 5px; font-size: 13px; }
+.row input[type=number] { width: 65px; }
+.summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
+.si { background: #faf5ed; padding: 10px; border-radius: 6px; text-align: center; }
+.si .lb { font-size: 0.75em; color: #8b7355; }
+.si .vl { font-size: 1.2em; font-weight: bold; color: #5a3e2b; margin-top: 2px; }
+.empty { text-align: center; color: #bbb; padding: 24px; font-size: 13px; }
+.rx-out { width: 100%; min-height: 400px; border: 1px solid #d4c5a9; border-radius: 8px; padding: 12px; font-family: "Courier New", monospace; font-size: 13px; line-height: 1.6; resize: vertical; background: #fffdf8; white-space: pre-wrap; }
+.copy-row { display: flex; gap: 8px; margin-top: 8px; }
+.src { font-size: 0.7em; color: #1565c0; }
+@media (max-width: 800px) { .main { flex-direction: column; } .right { width: 100%; } }
+</style>
+</head>
+<body>
+<h1>🏥 中醫處方工具</h1>
+<p class="subtitle">TCM Granule Prescription Tool</p>
+<div class="main">
+<div class="left">
+  <div class="card">
+    <h2>🔍 搜尋藥材 / 方劑 <span style="font-weight:normal;font-size:0.8em;color:#aaa">（支援拼音首字母，如 CX = 川芎）</span></h2>
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="輸入拼音/首字母/中文/英文 (例: GZT, gui zhi, 桂枝)" autocomplete="off">
+      <div class="dropdown" id="dropdown"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <h2 style="border:none;padding:0;margin:0">📋 處方箋</h2>
+      <button class="btn btn-s" onclick="clearAll()">清空</button>
+    </div>
+    <div class="row">
+      <label>患者:</label><input type="text" id="patientName" placeholder="姓名" style="width:100px;" oninput="genOutput()">
+      <label>日期:</label><input type="date" id="rxDate" onchange="genOutput()">
+      <label>劑數:</label><input type="number" id="numDoses" value="7" min="1" max="30" onchange="recalc()">
+      <label>次/日:</label>
+      <select id="timesPerDay" onchange="recalc()"><option value="2">2</option><option value="3" selected>3</option></select>
+    </div>
+    <table>
+      <thead><tr><th>藥名</th><th>中文</th><th>g/次</th><th>g/日</th><th>總g</th><th>$/g</th><th>小計</th><th></th></tr></thead>
+      <tbody id="rxBody"></tbody>
+    </table>
+    <div id="emptyState" class="empty">請在上方搜尋欄輸入拼音開始開方</div>
+    <div class="summary">
+      <div class="si"><div class="lb">品項</div><div class="vl" id="sItems">0</div></div>
+      <div class="si"><div class="lb">每日總克數</div><div class="vl" id="sDailyG">0 g</div></div>
+      <div class="si"><div class="lb">劑數</div><div class="vl" id="sDoses">7</div></div>
+      <div class="si"><div class="lb">總費用</div><div class="vl" id="sCost">$0.00</div></div>
+    </div>
+  </div>
+</div>
+<div class="right">
+  <div class="card" style="position:sticky;top:16px;">
+    <h2>📄 處方輸出</h2>
+    <textarea class="rx-out" id="rxOutput" readonly></textarea>
+    <div class="copy-row">
+      <button class="btn btn-p" onclick="copyRx()" id="copyBtn">📋 複製處方</button>
+      <button class="btn btn-s" onclick="window.print()">🖨️ 列印</button>
+    </div>
+  </div>
+</div>
+</div>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
